@@ -1,5 +1,7 @@
 # Riak connection pool
 
+[![Build Status][travis-img]][travis]
+
 
 
 ### How To Use
@@ -52,4 +54,6 @@ riakc_pool:query(default, get, [<<"groceries">>, <<"mine">>]).
 The source code is provided under the terms of [the MIT license][license].
 
 [license]:http://www.opensource.org/licenses/MIT
+[travis]:https://travis-ci.org/manifest/riak-connection-pool?branch=master
+[travis-img]:https://secure.travis-ci.org/manifest/riak-connection-pool.png
 
