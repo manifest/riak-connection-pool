@@ -13,4 +13,4 @@ docker run -ti --rm \
 	-p 8098:8098 \
 	-p 8087:8087 \
 	sandbox/riak-connection-pool \
-	/bin/bash -c "${DOCKER_RUN_COMMAND} && cd ${RIAKC_POOL} && /bin/bash"
+	/bin/bash -c "set -x && ${DOCKER_RUN_COMMAND} && set +x && cd ${RIAKC_POOL} && /bin/bash"
