@@ -55,7 +55,7 @@
 %% API
 %% =============================================================================
 
--spec query(pid(), function(), list()) -> any().
+-spec query(pid(), atom(), list()) -> any().
 query(Pid, Fun, Args) ->
 	gen_server:call(Pid, {query, Fun, Args}, infinity).
 

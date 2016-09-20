@@ -37,7 +37,7 @@
 %% API
 %% =============================================================================
 
--spec query(atom(), function(), list()) -> any().
+-spec query(atom(), atom(), list()) -> any().
 query(Pool, Fun, Args) ->
 	%% Prevent killing overflow connections
 	%% after their maximum is reached
