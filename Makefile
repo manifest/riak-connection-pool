@@ -7,7 +7,7 @@ DEPS = \
 	riakc
 
 dep_poolboy = git git://github.com/devinus/poolboy.git 1.5.1
-dep_riakc = git https://github.com/basho/riak-erlang-client.git 2.4.2
+dep_riakc = git https://github.com/basho/riak-erlang-client.git 2.5.0
 
 SHELL_DEPS = tddreloader
 SHELL_OPTS = \
