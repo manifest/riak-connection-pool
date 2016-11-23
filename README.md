@@ -6,46 +6,43 @@
 
 ### How To Use
 
-Build and run the docker container
+Build and run the docker container with Riak KV within it.
 
 ```bash
 $ ./run-docker.sh
 ```
 
-Execute following commands in container's shell:
+To build and start playing with the library, execute following commands in the shell:
 
 ```bash
 $ make app shell
 ```
 
-Starting a pool:
+Here is a minimal example:
 
 ```erlang
+%% Creating a pool and adding it to the supervision tree.
 Pool =
   #{name => default,
-    size => 10,
+    size => 5,
     connection =>
-      #{host => "localhost",
+      #{host => "192.168.99.100",
         port => 8087,
         options => [queue_if_disconnected]}},
 ChildSpec = riakc_pool:child_spec(Pool),
 supervisor:start_child(whereis(riakc_pool_sup), ChildSpec).
+
+%% Getting a connection and locking it to the current process.
+%% If process dies, connection will be released.
+Pid = riakc_pool:lock(default),
+%% Putting an object and getting it back.
+riakc_pb_socket:put(Pid, riakc_obj:new(<<"groceries">>, <<"mine">>, <<"eggs & bacon">>)),
+riakc_pb_socket:get(Pid, <<"groceries">>, <<"mine">>),
+%% Releasing the connection.
+riakc_pool:unlock(default, Pid).
 ```
 
-Executing queries:
-
-```erlang
-riakc_pool:query(default, put, [riakc_obj:new(<<"groceries">>, <<"mine">>, <<"eggs & bacon">>)]).
-riakc_pool:query(default, get, [<<"groceries">>, <<"mine">>]).
-%% {ok,{riakc_obj,<<"groceries">>,<<"mine">>,
-%%                <<107,206,97,96,96,96,204,96,202,5,82,60,147,164,15,105,
-%%                  123,155,237,13,129,8,37,...>>,
-%%                [{{dict,2,16,16,8,80,48,
-%%                        {[],[],[],[],[],[],[],[],[],[],[],[],...},
-%%                        {{[],[],[],[],[],[],[],[],[],[],...}}},
-%%                  <<"eggs & bacon">>}],
-%%                undefined,undefined}}
-```
+To learn more about Riak client library refer to its [documentation][riakc-docs].
 
 
 
@@ -56,4 +53,4 @@ The source code is provided under the terms of [the MIT license][license].
 [license]:http://www.opensource.org/licenses/MIT
 [travis]:https://travis-ci.org/manifest/riak-connection-pool?branch=master
 [travis-img]:https://secure.travis-ci.org/manifest/riak-connection-pool.png
-
+[riakc-docs]:https://github.com/basho/riak-erlang-client

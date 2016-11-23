@@ -26,27 +26,46 @@
 
 %% API
 -export([
-	query/3,
+	lock/1,
+	lock/2,
+	try_lock/1,
+	unlock/2,
 	child_spec/1
 ]).
 
-%% Definitions
--define(APP, ?MODULE).
+%% Types
+-type name() :: atom().
+
+-export_type([name/0]).
 
 %% =============================================================================
 %% API
 %% =============================================================================
 
--spec query(atom(), atom(), list()) -> any().
-query(Pool, Fun, Args) ->
-	%% Prevent killing overflow connections
-	%% after their maximum is reached
-	Pid = poolboy:checkout(Pool, false),
-	try riakc_pool_conn:query(Pid, Fun, Args)
-	after
-		ok = poolboy:checkin(Pool, Pid)
+-spec lock(name()) -> pid().
+lock(Pool) ->
+	poolboy:checkout(Pool, true).
+
+-spec lock(name(), timeout()) -> pid().
+lock(Pool, Timeout) ->
+	poolboy:checkout(Pool, true, Timeout).
+
+-spec try_lock(name()) -> {ok, pid()} | error.
+try_lock(Pool) ->
+	case poolboy:checkout(Pool, false, infinity) of
+		full -> error;
+		Pid  -> {ok, Pid}
 	end.
 
+-spec unlock(name(), pid()) -> ok.
+unlock(Pool, Pid) ->
+	poolboy:checkin(Pool, Pid).
+
+%% We don't want to spawn new connections, we also don't want to respawn
+%% existed ones (after the max overflow size is reached), so that we
+%% always have `max_overflow` equal to 0. This way, we still can process
+%% more than `size` requests by delaying them on `timeout` value using
+%% `lock/{1,2}` functions.
 -spec child_spec(map()) -> supervisor:child_spec().
 child_spec(#{name := Name, size := Size, connection := Conn} = M) ->
 	poolboy:child_spec(
@@ -54,7 +73,6 @@ child_spec(#{name := Name, size := Size, connection := Conn} = M) ->
 		[ {worker_module, riakc_pool_conn},
 			{name, {local, Name}},
 			{size, Size},
-			{max_overflow, maps:get(max_overflow, M, Size)},
+			{max_overflow, 0},
 			{strategy, maps:get(strategy, M, lifo)} ],
 		Conn).
-
