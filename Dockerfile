@@ -1,5 +1,10 @@
 FROM ubuntu:16.04
 
+ARG RIAKKV_VERSION
+ARG ULIMIT_FD
+ENV RIAKKV_VERSION=${RIAKKV_VERSION:-2.2.0}
+ENV ULIMIT_FD=${ULIMIT_FD:-262144}
+
 ## -----------------------------------------------------------------------------
 ## Installing dependencies
 ## -----------------------------------------------------------------------------
@@ -12,36 +17,31 @@ RUN set -xe \
 		ca-certificates \
 		lsb-release \
 		curl \
-	&& add-apt-repository -y "deb https://packages.erlang-solutions.com/ubuntu $(lsb_release -sc) contrib" \
-	&& curl -vs http://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc 2>&1 | apt-key add -- \
 	&& apt-get update \
 	&& apt-get -y --no-install-recommends install \
-		erlang-nox=1:19.0-1 \
-		erlang-dialyzer \
-		erlang-dev \
 		rsyslog \
 		vim-nox \
 		sudo \
 		less \
 		make \
-		git
+		git \
+		jq
 
 ## -----------------------------------------------------------------------------
 ## Installing Riak KV
 ## -----------------------------------------------------------------------------
-## NOTE: there is no ppa for xenial, so that we're using the package for trusty
 RUN set -xe \
-	&& curl -fSL https://packagecloud.io/install/repositories/basho/riak/script.deb.sh | bash \
-	&& perl -pi -e 's/xenial/trusty/g' /etc/apt/sources.list.d/basho_riak.list \
+	&& add-apt-repository -s -y "deb https://packagecloud.io/basho/riak/ubuntu $(lsb_release -sc) main" \
+	&& curl -fSL https://packagecloud.io/gpg.key 2>&1 | apt-key add -- \
 	&& apt-get update \
-	&& apt-get -y --no-install-recommends install riak=2.1.4-1
+	&& apt-get -y --no-install-recommends install \
+		riak=${RIAKKV_VERSION}-1
 
 ## -----------------------------------------------------------------------------
 ## Configuring Riak KV
 ## -----------------------------------------------------------------------------
 RUN set -xe \
+	&& echo "ulimit -n ${ULIMIT_FD}" >> /etc/default/riak \
 	&& perl -pi -e 's/(listener.http.internal = )127\.0\.0\.1/${1}0.0.0.0/' /etc/riak/riak.conf \
 	&& perl -pi -e 's/(listener.protobuf.internal = )127\.0\.0\.1/${1}0.0.0.0/' /etc/riak/riak.conf \
-	&& perl -pi -e 's/(nodename = riak)/${1}-dev-1/' /etc/riak/riak.conf \
-	&& perl -pi -e 's/(log.syslog = )off/${1}on/' /etc/riak/riak.conf
-
+	&& perl -pi -e 's/(?:(log.syslog = ).*)/${1}on/' /etc/riak/riak.conf

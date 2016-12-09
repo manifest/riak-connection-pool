@@ -1,16 +1,24 @@
 #!/bin/bash
 
-RIAKC_POOL='/opt/sandbox/riak-connection-pool'
+PROJECT='riak-connection-pool'
+PROJECT_DIR="/opt/sandbox/${PROJECT}"
+DOCKER_CONTAINER_NAME="sandbox/${PROJECT}"
+DOCKER_CONTAINER_COMMAND=${DOCKER_CONTAINER_COMMAND:-'/bin/bash'}
+ULIMIT_FD=262144
 
 read -r DOCKER_RUN_COMMAND <<-EOF
-	riak start \
+	service rsyslog start \
+	&& riak start \
 	&& riak-admin wait-for-service riak_kv
 EOF
 
-docker build -t sandbox/riak-connection-pool .
+docker build -t ${DOCKER_CONTAINER_NAME} .
 docker run -ti --rm \
-	-v $(pwd):${RIAKC_POOL} \
+	-v $(pwd):${PROJECT_DIR} \
+	--ulimit nofile=${ULIMIT_FD}:${ULIMIT_FD} \
 	-p 8098:8098 \
 	-p 8087:8087 \
-	sandbox/riak-connection-pool \
-	/bin/bash -c "set -x && ${DOCKER_RUN_COMMAND} && set +x && cd ${RIAKC_POOL} && /bin/bash"
+	-p 8093:8093 \
+	-p 8985:8985 \
+	${DOCKER_CONTAINER_NAME} \
+	/bin/bash -c "set -x && cd ${PROJECT_DIR} && ${DOCKER_RUN_COMMAND} && set +x && ${DOCKER_CONTAINER_COMMAND}"
