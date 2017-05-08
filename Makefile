@@ -1,6 +1,8 @@
 PROJECT = riakc_pool
 PROJECT_DESCRIPTION = Riak connection pool
-PROJECT_VERSION = 0.1.0
+
+DEP_PLUGINS = \
+	version.mk
 
 DEPS = \
 	poolboy \
@@ -8,6 +10,9 @@ DEPS = \
 
 dep_poolboy = git git://github.com/manifest/poolboy.git feature/worker-args-any
 dep_riakc = git https://github.com/basho/riak-erlang-client.git 2.5.0
+
+BUILD_DEPS = version.mk
+dep_version.mk = git git://github.com/manifest/version.mk.git master
 
 SHELL_DEPS = tddreloader
 SHELL_OPTS = \
